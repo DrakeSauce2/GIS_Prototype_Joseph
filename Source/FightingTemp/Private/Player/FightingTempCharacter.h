@@ -32,15 +32,6 @@ class AFightingTempCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-	/** Camera boom positioning the camera behind the character */
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	//USpringArmComponent* CameraBoom;
-
-	///** Follow camera */
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	//UCameraComponent* FollowCamera;
-
-
 	//------NOTE THIS CHARACTER AND BLUEPRINT IS LOCAL MULTIPLAYER ONLY! ENTIRELY SERVER SIDE-----//
 	
 public:
@@ -48,6 +39,8 @@ public:
 
 	virtual void PawnClientRestart() override;
 
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	bool IsFlipped();
 
 protected:
 
@@ -115,14 +108,5 @@ protected:
 
 	virtual void Tick(float DeltaSeconds) override;
 
-private:
-	UFUNCTION(BlueprintCallable, Category = "Movement")
-	bool IsFlipped();
-
-public:
-	///** Returns CameraBoom subobject **/
-	//FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	///** Returns FollowCamera subobject **/
-	//FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
 
