@@ -12,7 +12,7 @@
 #include "EnhancedInputSubsystems.h"
 
 #include "GameplayTagsManager.h"
-#include "GameFramework/CharacterMovementComponent.h"
+
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
 
@@ -51,17 +51,6 @@ AFightingTempCharacter::AFightingTempCharacter()
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
-	//// Create a camera boom (pulls in towards the player if there is a collision)
-	//CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	//CameraBoom->SetupAttachment(RootComponent);
-	//CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
-	//CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
-
-	//// Create a follow camera
-	//FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	//FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
-	//FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 
@@ -70,7 +59,6 @@ AFightingTempCharacter::AFightingTempCharacter()
 	transform = FTransform(FQuat(), FVector(), FVector());
 	scale = FVector(0.0f, 0.0f, 0.0f);
 	PlayerHealth = 1.0f;
-	isFlipped = false;
 }
 
 void AFightingTempCharacter::PawnClientRestart()
@@ -80,65 +68,47 @@ void AFightingTempCharacter::PawnClientRestart()
 
 void AFightingTempCharacter::BeginPlay()
 {
-	// Call the base class  
 	Super::BeginPlay();
-	
 }
 
-void AFightingTempCharacter::Tick(float DeltaSeconds) //the worst code ever possible is below, fix later PLEASE WTF
+void AFightingTempCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-//HELP
-	if(otherPlayer) //if exists....
+
+	if (!otherPlayer) return;
+
+	if (!GetCharacterMovement()) return;
+
+	if (!otherPlayer->GetCharacterMovement()) return;
+
+	if (otherPlayer->GetCharacterMovement()->GetActorLocation().X <= GetCharacterMovement()->GetActorLocation().X) //left and right <--> = X in unreal. on map check if enemy to left of u
 	{
-
-		if(auto characterMovement = GetCharacterMovement()) //then get our char movement
+		if (IsFlipped()) //unflip
 		{
-			//WHY
-			if(auto enemyMovement = otherPlayer->GetCharacterMovement()) //get other player's movement
-			{
-				//IT JUST KEEPS GOING
-				if(enemyMovement->GetActorLocation().X <= characterMovement->GetActorLocation().X) //left and right <--> = X in unreal. on map check if enemy to left of u
-				{
-					if(isFlipped) //unflip
-					{
-						//UE_LOG(LogTemp, Warning, TEXT("IsFlipped True!!!!!!!! CHar: %s"), *this->GetName());
+			if (!GetMesh()) return;
 
-						//sobbing 
-						if(auto mesh = GetMesh()) //get tha meshh yass get it
-						{
-							UE_LOG(LogTemp, Warning, TEXT("GotCapsuleComponenet!!"));
-							transform = mesh->GetRelativeTransform();
-							scale = transform.GetScale3D();
-							scale.Y = -1;
-							transform.SetScale3D(scale);
-							mesh->SetRelativeTransform(transform);
-						}
-						isFlipped = false;
-					}
-				}
-				else
-				{
-					if(!isFlipped) //flip
-					{
-						//UE_LOG(LogTemp, Warning, TEXT("IsFlipped False!!!!!!!! CHar: %s"), *this->GetName());
-						//sobbing 
-						if(auto mesh = GetMesh()) //get tha meshh yass get it
-						{
-							transform = mesh->GetRelativeTransform();
-							scale = transform.GetScale3D();
-							scale.Y = 1;
-							transform.SetScale3D(scale);
-							mesh->SetRelativeTransform(transform);
-						}
-						isFlipped = true;
-					}
-					
-				}
-				
-			}
+			scale.Y = -1;
+			transform.SetScale3D(scale);
+			GetMesh()->SetRelativeTransform(transform);
 		}
 	}
+	else
+	{
+		if (!IsFlipped()) //flip
+		{
+			if (!GetMesh()) return;
+
+			scale.Y = 1;
+			transform.SetScale3D(scale);
+			GetMesh()->SetRelativeTransform(transform);
+		}
+
+	}
+}
+
+bool AFightingTempCharacter::IsFlipped()
+{
+	return scale.Y > 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -203,7 +173,7 @@ void AFightingTempCharacter::MoveRight(float Value) //altered in blueprint btw f
 			float currentDistanceApart = abs(otherPlayer->GetActorLocation().X - GetActorLocation().X);
 			if(currentDistanceApart >= 5.0f)
 			{
-				if(((currentDistanceApart + Value < currentDistanceApart) && !isFlipped) || ((currentDistanceApart - Value < currentDistanceApart) && isFlipped))
+				if(((currentDistanceApart + Value < currentDistanceApart) && !IsFlipped()) || ((currentDistanceApart - Value < currentDistanceApart) && IsFlipped()))
 				{
 					AddMovementInput(FVector(1.f, 0.f, 0.f), Value);
 				}
@@ -240,7 +210,7 @@ void AFightingTempCharacter::MoveRightController(float Value)
 				float currentDistanceApart = abs(otherPlayer->GetActorLocation().X - GetActorLocation().X);
 				if(currentDistanceApart >= 5.0f)
 				{
-					if(((currentDistanceApart + Value < currentDistanceApart) && !isFlipped) || ((currentDistanceApart - Value < currentDistanceApart) && isFlipped))
+					if(((currentDistanceApart + Value < currentDistanceApart) && !IsFlipped()) || ((currentDistanceApart - Value < currentDistanceApart) && IsFlipped()))
 					{
 						AddMovementInput(FVector(1.f, 0.f, 0.f), Value);
 					}

@@ -6,6 +6,7 @@
 
 //#include "GameFramework/Character.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Logging/LogMacros.h"
 #include "FightingTempCharacter.generated.h"
 
@@ -95,9 +96,7 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player References")
 	AFightingTempCharacter* otherPlayer;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Model")
-	bool isFlipped;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Model")
 	FTransform transform;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Model")
@@ -115,6 +114,10 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void Tick(float DeltaSeconds) override;
+
+private:
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	bool IsFlipped();
 
 public:
 	///** Returns CameraBoom subobject **/
