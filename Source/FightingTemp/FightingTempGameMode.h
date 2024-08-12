@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "Player/FightingTempCharacter.h"
+#include "InputMappingContext.h" 
 #include "FightingTempGameMode.generated.h"
 
 UENUM(BlueprintType)
@@ -14,6 +15,10 @@ enum class ECharacterClass : uint8
 	VE_Mannequin UMETA(DisplayName = "Mannequin")
 };
 
+class AGCharacterBase;
+/*
+* 
+*/
 UCLASS(minimalapi)
 class AFightingTempGameMode : public AGameModeBase
 {
@@ -22,10 +27,57 @@ class AFightingTempGameMode : public AGameModeBase
 public:
 	AFightingTempGameMode();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Player References")
-	AFightingTempCharacter* player1;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Player References")
-	AFightingTempCharacter* player2;
+protected:
+	virtual void BeginPlay() override;
+
+public:
+	virtual void Tick(float DeltaTime) override;
+
+private:
+	void SetPlayerControllerEnabled(AGCharacterBase* PlayerController, bool state);
+
+	/*****************************************************/
+	/*                       Timer                       */
+	/*****************************************************/
+	UPROPERTY(EditDefaultsOnly, Category = "Timer")
+	float RoundStartTime = 60.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Timer")
+	float CountdownStartTime = 3.0f;
+
+	FTimerHandle RoundTimerHandle;
+	FTimerHandle CountdownTimerHandle;
+
+	float RoundTimeRemaining = -1.0f;
+	float CountdownTimeRemaining = -1.0f;
+
+	void UpdateRoundTimer();
+	void UpdateCountdownTimer();
+
+	void StartRound();
+	void EndRound();
+
+	/*****************************************************/
+	/*                      Spawning                     */
+	/*****************************************************/
+	void SpawnPlayers();
+	AGCharacterBase* SpawnAndPossessCharacter(APlayerController* PlayerController, TSubclassOf<class AGCharacterBase> SelectedCharacterToSpawn, const FVector& SpawnLocation);
+
+	AGCharacterBase* PlayerOne;
+	AGCharacterBase* PlayerTwo;
+
+	/*****************************************************/
+	/*                      Widgets                      */
+	/*****************************************************/
+	void SpawnGameplayUI();
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UGameplayUI> GameplayUIClass;
+
+	UPROPERTY()
+	UGameplayUI* GameplayUI;
+
+
 };
 
 

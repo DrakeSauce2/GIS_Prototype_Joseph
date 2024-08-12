@@ -20,7 +20,11 @@ class UGAnimInstance : public UAnimInstance
 protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
-	bool IsFlipped;
+	float Speed = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bIsFlipped;
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bIsJumping;
 
 private:
 	// the below functions are the native overrides for each phase

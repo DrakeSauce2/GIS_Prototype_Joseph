@@ -129,6 +129,7 @@ void AFightingTempCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	// Set up action bindings
 	if(auto gameMode = Cast<AFightingTempGameMode>(GetWorld()->GetAuthGameMode()))
 	{
+		/*
 		// We are using the old input system due to issues with axis mapping equivalent not found in enhanced input system. --> needed for blueprint 
 		if(gameMode->player1 == this)
 		{
@@ -146,6 +147,7 @@ void AFightingTempCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		PlayerInputComponent->BindAction("JumpP2", IE_Pressed, this, &ACharacter::Jump);
 		PlayerInputComponent->BindAction("JumpP2", IE_Released, this, &ACharacter::StopJumping);
 		PlayerInputComponent->BindAction("AttackLightP2", IE_Pressed, this, &AFightingTempCharacter::StartAttackLight);
+		*/
 	}
 }
 

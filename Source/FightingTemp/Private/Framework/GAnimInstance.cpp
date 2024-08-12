@@ -22,8 +22,11 @@ void UGAnimInstance::NativeInitializeAnimation()
 void UGAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
-	if (OwnerCharacter && OwnerMovemmentComp && FightingTempCharacter)
+
+	if (OwnerCharacter && OwnerMovemmentComp)
 	{
-		IsFlipped = FightingTempCharacter->IsFlipped();
+		//bIsFlipped = FightingTempCharacter->IsFlipped();
+		Speed = OwnerCharacter->GetVelocity().Length();
+		bIsJumping = OwnerMovemmentComp->IsFalling();
 	}
 }

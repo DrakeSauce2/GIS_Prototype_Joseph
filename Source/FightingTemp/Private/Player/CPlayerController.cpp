@@ -25,12 +25,6 @@ void ACPlayerController::AcknowledgePossession(APawn* NewPawn)
 
 void ACPlayerController::PostPossessionSetup(APawn* NewPawn)
 {
-	PlayerCharacter = Cast<AFightingTempCharacter>(NewPawn);
-	if (!PlayerCharacter)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Needs CPlayerCharacter as Pawn"));
-		return;
-	}
 	
 }
 
