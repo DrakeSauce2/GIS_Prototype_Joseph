@@ -78,6 +78,8 @@ private:
 	UAnimMontage* GrabAnimationMontage;
 
 public:	
+	void FlipCharacter(bool bIsFacingRight);
+
 	UFUNCTION()
 	void TakeDamage(float Damage);
 

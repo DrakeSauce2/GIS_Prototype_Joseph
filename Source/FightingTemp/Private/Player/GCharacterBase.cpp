@@ -32,6 +32,18 @@ void AGCharacterBase::BeginPlay()
 void AGCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	/*
+	*	Force constrains the players position, the options in the editor didn't work
+	*	so I just hard coded it in. Probably try to sort that out later.
+	*/ 
+	if (GetActorLocation().Y != 10.f) 
+	{
+		FVector NewLocation = GetActorLocation();
+		NewLocation.Y = 10.f;
+
+		SetActorLocation(NewLocation);
+	}
 }
 
 // Called to bind functionality to input
@@ -75,6 +87,18 @@ void AGCharacterBase::HandleDirectionalInput(const FInputActionValue& InputValue
 	FVector Direction = FVector(input.X, 0, 0);
 
 	AddMovementInput(Direction);
+}
+
+void AGCharacterBase::FlipCharacter(bool bIsFacingRight)
+{
+	float direction = bIsFacingRight ? 1.0f : -1.0f;
+
+	if (GetMesh()->GetComponentScale().Y == direction) return;
+
+	FVector NewScale = GetMesh()->GetComponentScale();
+	NewScale.Y = direction;
+
+	GetMesh()->SetWorldScale3D(NewScale);
 }
 
 void AGCharacterBase::TakeDamage(float Damage)

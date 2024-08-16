@@ -33,9 +33,18 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
+	FORCEINLINE AGCharacterBase* GetPlayerOne() { return PlayerOne; }
+	FORCEINLINE AGCharacterBase* GetPlayerTwo() { return PlayerTwo; }
+
 private:
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	class AGFightingCamera* FightingCamera;
+
+	void SetCameraViewTargets();
 	void SetPlayerControllerEnabled(AGCharacterBase* PlayerController, bool state);
 
+	void UpdatePlayerFlip();
+	
 	/*****************************************************/
 	/*                       Timer                       */
 	/*****************************************************/

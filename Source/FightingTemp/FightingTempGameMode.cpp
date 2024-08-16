@@ -6,6 +6,8 @@
 #include "Engine/LocalPlayer.h"
 #include "EnhancedInputSubsystems.h"
 
+#include "Framework/GFightingCamera.h"
+
 #include "GameFramework/PlayerController.h"
 
 #include "Kismet/GameplayStatics.h"
@@ -33,9 +35,19 @@ void AFightingTempGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SpawnGameplayUI();
+	FRotator SpawnRotation = FRotator(0.0f, -90.0f, 0.0f);
+	FActorSpawnParameters SpawnParams;
+	FightingCamera = GetWorld()->SpawnActor<AGFightingCamera>(AGFightingCamera::StaticClass(), FVector::ZeroVector, SpawnRotation, SpawnParams);
 
+	SpawnGameplayUI();
 	SpawnPlayers();
+
+	/*
+	*	This is to add a delay between the players spawning and the setting the camera view targets
+	*	I don't why but Unreal doesn't use this camera without the delay
+	*/ 
+	FTimerHandle TimerHandle;
+	GetWorldTimerManager().SetTimer(TimerHandle, this, &AFightingTempGameMode::SetCameraViewTargets, 0.1f, false);
 
 	SetPlayerControllerEnabled(PlayerOne, false);
 	SetPlayerControllerEnabled(PlayerTwo, false);
@@ -48,14 +60,48 @@ void AFightingTempGameMode::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	UpdatePlayerFlip();
+}
+
+void AFightingTempGameMode::UpdatePlayerFlip()
+{
+	if (!PlayerOne || !PlayerTwo) return;
+
+	float PlayerOneXPosition = PlayerOne->GetActorLocation().X;
+	float PlayerTwoXPosition = PlayerTwo->GetActorLocation().X;
+
+	float MidpointX = (PlayerOneXPosition + PlayerTwoXPosition) / 2.0f;
+
+	// If true is facing right, else is facing left
+	PlayerOne->FlipCharacter(PlayerOneXPosition < MidpointX);
+	PlayerTwo->FlipCharacter(PlayerTwoXPosition < MidpointX);
+}
+
+#pragma region Helper Functions
+
+void AFightingTempGameMode::SetCameraViewTargets()
+{
+	APlayerController* PlayerOneController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (PlayerOneController && FightingCamera)
+	{
+		PlayerOneController->SetViewTarget(FightingCamera);
+	}
+
+	APlayerController* PlayerTwoController = UGameplayStatics::GetPlayerController(GetWorld(), 1);
+	if (PlayerTwoController && FightingCamera)
+	{
+		PlayerTwoController->SetViewTarget(FightingCamera);
+	}
 }
 
 void AFightingTempGameMode::SetPlayerControllerEnabled(AGCharacterBase* Player, bool state)
 {
 	if (!Player) return;
-	
+
 	Player->SetInputEnabled(state);
 }
+
+#pragma endregion
 
 #pragma region Gameplay Functions
 
@@ -166,7 +212,7 @@ void AFightingTempGameMode::SpawnPlayers()
 AGCharacterBase* AFightingTempGameMode::SpawnAndPossessCharacter(APlayerController* PlayerController, TSubclassOf<class AGCharacterBase> SelectedCharacterToSpawn, const FVector& SpawnLocation)
 {
 	UMyBaseGameInstance* GameInstance = Cast<UMyBaseGameInstance>(GetGameInstance());
-	if (!GameInstance) return nullptr;
+	if (!GameInstance) return nullptr; 
 
 	if (!PlayerController) return nullptr;
 
@@ -194,7 +240,7 @@ AGCharacterBase* AFightingTempGameMode::SpawnAndPossessCharacter(APlayerControll
 }
 
 #pragma endregion
-
+ 
 void AFightingTempGameMode::SpawnGameplayUI()
 {
 	if (!GameplayUIClass) return;
