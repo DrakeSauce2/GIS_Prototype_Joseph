@@ -6,6 +6,9 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
 
+#include "GameplayAbilities/GAbilitySystemComponent.h"
+#include "GameplayAbilities/GAttributeSet.h"
+
 #include "Components/CapsuleComponent.h"
 
 #include "EnhancedInputSubsystems.h"
@@ -14,18 +17,31 @@
 #include "Framework/HitboxActor.h"
 
 #include "GameFramework/PlayerController.h"
-
 #include "GameFramework/CharacterMovementComponent.h"
+
+#include "Widgets/ValueGauge.h"
 
 AGCharacterBase::AGCharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	AbilitySystemComponent = CreateDefaultSubobject<UGAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AttributeSet = CreateDefaultSubobject<UGAttributeSet>(TEXT("AttributeSet"));
+
+	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UGAttributeSet::GetHealthAttribute()).AddUObject(this, &AGCharacterBase::HealthUpdated);
+}
+
+UAbilitySystemComponent* AGCharacterBase::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
 }
 
 // Called when the game starts or when spawned
 void AGCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	StartingPosition = GetActorLocation();
 }
 
 // Called every frame
@@ -37,10 +53,10 @@ void AGCharacterBase::Tick(float DeltaTime)
 	*	Force constrains the players position, the options in the editor didn't work
 	*	so I just hard coded it in. Probably try to sort that out later.
 	*/ 
-	if (GetActorLocation().Y != 10.f) 
+	if (GetActorLocation().Y != StartingPosition.Y)
 	{
 		FVector NewLocation = GetActorLocation();
-		NewLocation.Y = 10.f;
+		NewLocation.Y = StartingPosition.Y;
 
 		SetActorLocation(NewLocation);
 	}
@@ -87,6 +103,32 @@ void AGCharacterBase::HandleDirectionalInput(const FInputActionValue& InputValue
 	FVector Direction = FVector(input.X, 0, 0);
 
 	AddMovementInput(Direction);
+}
+
+void AGCharacterBase::InitAttributes()
+{
+	AbilitySystemComponent->ApplyInitialEffects();
+}
+
+void AGCharacterBase::SetHealthBar(UValueGauge* HealthBarToSet)
+{
+	if (HealthBarToSet) 
+	{
+		HealthBar = HealthBarToSet;
+	}
+}
+
+void AGCharacterBase::HealthUpdated(const FOnAttributeChangeData& ChangeData)
+{
+	if (HealthBar)
+	{
+		HealthBar->SetValue(ChangeData.NewValue, AttributeSet->GetMaxHealth());
+	}
+
+	if (ChangeData.NewValue <= 0)
+	{
+		// Die
+	}
 }
 
 void AGCharacterBase::FlipCharacter(bool bIsFacingRight)

@@ -20,5 +20,6 @@ void UValueGauge::SetValue(float NewVal, float NewMaxValue)
 	}
 
 	float Percent = NewVal / NewMaxValue;
+	UE_LOG(LogTemp, Warning, TEXT("Health: %f, MaxHealth: %f, Percent: %f"), NewVal, NewMaxValue, Percent);
 	ProgressBar->SetPercent(Percent);
 }

@@ -25,9 +25,6 @@
 
 AFightingTempGameMode::AFightingTempGameMode()
 {
-	// Start players as spectators to prevent auto-spawning of the player controller
-	bStartPlayersAsSpectators = true;
-
 	PrimaryActorTick.bCanEverTick = true;
 }
 
@@ -41,6 +38,12 @@ void AFightingTempGameMode::BeginPlay()
 
 	SpawnGameplayUI();
 	SpawnPlayers();
+
+	PlayerOne->SetHealthBar(GameplayUI->GetPlayerOneHealthBar());
+	PlayerOne->InitAttributes();
+
+	PlayerTwo->SetHealthBar(GameplayUI->GetPlayerTwoHealthBar());
+	PlayerTwo->InitAttributes();
 
 	/*
 	*	This is to add a delay between the players spawning and the setting the camera view targets

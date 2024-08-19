@@ -3,23 +3,30 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "AbilitySystemInterface.h"
+
 #include "GameFramework/Character.h"
+#include "GameplayEffectTypes.h"
 #include "GCharacterBase.generated.h"
 
-class AHitboxActor;
 class UInputAction;
 class UAnimMontage;
+class UGAbilitySystemComponent;
+class UGAttributeSet;
+class UGameplayEffect;
 /*
 * 
 */
 UCLASS()
-class AGCharacterBase : public ACharacter
+class AGCharacterBase : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
 	AGCharacterBase();
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -42,6 +49,13 @@ protected:
 	UFUNCTION()
 	virtual void SpecialAttack();
 
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
+	UGAbilitySystemComponent* AbilitySystemComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
+	UGAttributeSet* AttributeSet;
+
 private:
 	UFUNCTION()
 	void HandleDirectionalInput(const FInputActionValue& InputValue);
@@ -49,16 +63,17 @@ private:
 	bool IsAnyMontagePlaying() const;
 	void PlayAnimMontage(UAnimMontage* MontageToPlay);
 
-	UPROPERTY(EditDefaultsOnly, Category = "Hitbox")
-	AHitboxActor* Hitbox;
-
 	/*
 	*	Change this later, I have no idea how to use the enable/disable functions on
 	*	the APlayerController in cpp. So for now disabling input will be done through
 	*	a bool.
 	*/
-	UPROPERTY()
 	bool bInputEnabled = false; 
+
+	FVector StartingPosition;
+
+	UPROPERTY()
+	UValueGauge* HealthBar;
 
 	/*****************************************************/
 	/*               Animation Montages                  */
@@ -78,16 +93,17 @@ private:
 	UAnimMontage* GrabAnimationMontage;
 
 public:	
+	void InitAttributes();
+
+	void SetHealthBar(UValueGauge* HealthBarToSet);
+
+	void HealthUpdated(const FOnAttributeChangeData& ChangeData);
+
 	void FlipCharacter(bool bIsFacingRight);
 
-	UFUNCTION()
 	void TakeDamage(float Damage);
 
-	UFUNCTION()
 	void SetInputEnabled(bool state);
-
-	UFUNCTION()
-	AHitboxActor* GetHitbox() { return Hitbox; }
 
 	/*****************************************************/
 	/*                       Input                       */

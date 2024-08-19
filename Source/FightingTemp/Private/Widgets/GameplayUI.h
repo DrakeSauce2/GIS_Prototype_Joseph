@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Widgets/ValueGauge.h"
 #include "GameplayUI.generated.h"
 
 /**
@@ -18,8 +19,16 @@ public:
 	virtual void NativeConstruct() override;
 
 	void SetTimerValue(FText Text);
-
 	void SetCountdownValue(FText Text);
+
+	UValueGauge* GetPlayerOneHealthBar() { return PlayerOneHealthBar; }
+	UValueGauge* GetPlayerTwoHealthBar() { return PlayerTwoHealthBar; }
+
+private:
+	UPROPERTY(VisibleDefaultsOnly, meta = (BindWidget))
+	class UValueGauge* PlayerOneHealthBar;
+	UPROPERTY(VisibleDefaultsOnly, meta = (BindWidget))
+	class UValueGauge* PlayerTwoHealthBar;
 
 	UPROPERTY(VisibleDefaultsOnly, meta = (BindWidget))
 	class UTextBlock* TimerText;
