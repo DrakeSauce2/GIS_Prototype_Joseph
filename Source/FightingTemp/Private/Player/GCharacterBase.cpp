@@ -6,9 +6,6 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
 
-#include "GameplayAbilities/GAbilitySystemComponent.h"
-#include "GameplayAbilities/GAttributeSet.h"
-
 #include "Components/CapsuleComponent.h"
 
 #include "EnhancedInputSubsystems.h"
@@ -16,8 +13,15 @@
 
 #include "Framework/HitboxActor.h"
 
+#include "GameplayAbilities/GAbilitySystemComponent.h"
+#include "GameplayAbilities/GAbilitySystemTypes.h"
+#include "GameplayAbilities/GAttributeSet.h"
+#include "GameplayAbilities/GAbilityGenericTags.h"
+
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+
+#include "Hitbox/HitboxComponent.h"
 
 #include "Widgets/ValueGauge.h"
 
@@ -28,7 +32,12 @@ AGCharacterBase::AGCharacterBase()
 	AbilitySystemComponent = CreateDefaultSubobject<UGAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AttributeSet = CreateDefaultSubobject<UGAttributeSet>(TEXT("AttributeSet"));
 
+	HitboxComponent = CreateDefaultSubobject<UHitboxComponent>("Hitbox Component");
+	HitboxComponent->SetupAttachment(GetMesh());
+
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UGAttributeSet::GetHealthAttribute()).AddUObject(this, &AGCharacterBase::HealthUpdated);
+	AbilitySystemComponent->RegisterGameplayTagEvent(UGAbilityGenericTags::GetDeadTag()).AddUObject(this, &AGCharacterBase::DeathTagChanged);
+	AbilitySystemComponent->RegisterGameplayTagEvent(UGAbilityGenericTags::GetStunnedTag()).AddUObject(this, &AGCharacterBase::StunTagChanged);
 }
 
 UAbilitySystemComponent* AGCharacterBase::GetAbilitySystemComponent() const
@@ -84,15 +93,8 @@ void AGCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 
 void AGCharacterBase::HandleDirectionalInput(const FInputActionValue& InputValue)
 {
-	if (IsAnyMontagePlaying()) return;
-
 	FVector2D input = InputValue.Get<FVector2D>();
 	input.Normalize();
-
-	if (!bInputEnabled) 
-	{
-		input = FVector2D::ZeroVector;
-	}
 
 	if (input.Y > 0)
 	{
@@ -105,19 +107,6 @@ void AGCharacterBase::HandleDirectionalInput(const FInputActionValue& InputValue
 	AddMovementInput(Direction);
 }
 
-void AGCharacterBase::InitAttributes()
-{
-	AbilitySystemComponent->ApplyInitialEffects();
-}
-
-void AGCharacterBase::SetHealthBar(UValueGauge* HealthBarToSet)
-{
-	if (HealthBarToSet) 
-	{
-		HealthBar = HealthBarToSet;
-	}
-}
-
 void AGCharacterBase::HealthUpdated(const FOnAttributeChangeData& ChangeData)
 {
 	if (HealthBar)
@@ -127,7 +116,20 @@ void AGCharacterBase::HealthUpdated(const FOnAttributeChangeData& ChangeData)
 
 	if (ChangeData.NewValue <= 0)
 	{
-		// Die
+		UE_LOG(LogTemp, Warning, TEXT("DEAD"));
+
+		if (GetMesh()->GetAnimInstance())
+		{
+			GetMesh()->GetAnimInstance()->StopAllMontages(1.0f);
+		}
+
+		PlayMontage(DeathMontage);
+		AbilitySystemComponent->ApplyGameplayEffect(DeathEffect);
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		int32 PlayerID = GetPlayerLocalID();
+		OnPlayerDeath.Broadcast(PlayerID);
 	}
 }
 
@@ -143,17 +145,127 @@ void AGCharacterBase::FlipCharacter(bool bIsFacingRight)
 	GetMesh()->SetWorldScale3D(NewScale);
 }
 
-void AGCharacterBase::TakeDamage(float Damage)
-{
-	// Do health stuff
+#pragma region Init Functions
 
-	// Apply hit stagger
+void AGCharacterBase::InitAttributes()
+{
+	AbilitySystemComponent->ApplyInitialEffects();
+}
+
+void AGCharacterBase::InitAbilities()
+{
+	AbilitySystemComponent->GrantInitialAbilities();
+}
+
+void AGCharacterBase::SetHealthBar(UValueGauge* HealthBarToSet)
+{
+	if (HealthBarToSet)
+	{
+		HealthBar = HealthBarToSet;
+	}
+}
+
+#pragma endregion 
+
+#pragma region Gameplay Cue Functions
+
+void AGCharacterBase::StartStunAnim()
+{
+	PlayMontage(StunMontage);
+}
+
+void AGCharacterBase::StopStunAnim()
+{
+	GetMesh()->GetAnimInstance()->Montage_Stop(0.2, StunMontage);
+}
+
+void AGCharacterBase::PlayHitReaction()
+{
+	PlayMontage(HitReactionMontage);
+}
+
+#pragma endregion 
+
+#pragma region Helper Functions
+
+float AGCharacterBase::GetHealth()
+{
+	if (!AttributeSet) return 0.0f;
+
+	return AttributeSet->GetHealth();
+}
+
+void AGCharacterBase::ApplyFullStat()
+{
+	if (AbilitySystemComponent)
+		AbilitySystemComponent->ApplyFullStat();
 }
 
 void AGCharacterBase::SetInputEnabled(bool state)
 {
-	bInputEnabled = state;
+	if (state == true) 
+	{
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	}
+	else 
+	{
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+	}
 }
+
+void AGCharacterBase::PlayMontage(UAnimMontage* MontageToPlay)
+{
+	if (MontageToPlay)
+	{
+		if (GetMesh()->GetAnimInstance())
+		{
+			GetMesh()->GetAnimInstance()->Montage_Play(MontageToPlay);
+		}
+	}
+}
+
+void AGCharacterBase::StunTagChanged(const FGameplayTag TagChanged, int32 NewStackCount)
+{
+	if (NewStackCount != 0)
+	{
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+		TArray<FGameplayAbilitySpec> AllAbilities = GetAbilitySystemComponent()->GetActivatableAbilities();
+		for (FGameplayAbilitySpec& Spec : AllAbilities)
+		{
+			GetAbilitySystemComponent()->CallServerEndAbility(Spec.Handle, Spec.ActivationInfo, FPredictionKey());
+		}
+	}
+	else
+	{
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	}
+}
+
+void AGCharacterBase::DeathTagChanged(const FGameplayTag TagChanged, int32 NewStackCount)
+{
+	if (NewStackCount == 0)
+	{
+		StopAnimMontage(DeathMontage);
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	}
+}
+
+int32 AGCharacterBase::GetPlayerLocalID() const
+{
+	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+	{
+		if (ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer())
+		{
+			return LocalPlayer->GetControllerId();
+		}
+	}
+
+	return -1;  // No Valid Local Player ID Found
+}
+
+#pragma endregion 
 
 #pragma region Action Functions
 
@@ -164,63 +276,27 @@ void AGCharacterBase::Block()
 
 void AGCharacterBase::Grab()
 {
-	if (!bInputEnabled) return;
 
 }
 
 void AGCharacterBase::LightAttack()
 {
-	if (!bInputEnabled) return;
-
-	PlayAnimMontage(LightAttackAnimationMontage);
+	GetAbilitySystemComponent()->PressInputID((int)EAbilityInputID::LightAttack);
 }
 
 void AGCharacterBase::MediumAttack()
 {
-	if (!bInputEnabled) return;
-
-	PlayAnimMontage(MediumAttackAnimationMontage);
+	GetAbilitySystemComponent()->PressInputID((int)EAbilityInputID::MediumAttack);
 }
 
 void AGCharacterBase::HeavyAttack()
 {
-	if (!bInputEnabled) return;
-
-	PlayAnimMontage(HeavyAttackAnimationMontage);
+	GetAbilitySystemComponent()->PressInputID((int)EAbilityInputID::HeavyAttack);
 }
 
 void AGCharacterBase::SpecialAttack()
 {
-	if (!bInputEnabled) return;
-
-	PlayAnimMontage(SpecialAttackAnimationMontage);
-}
-
-#pragma endregion
-
-#pragma region Animation Montage Helper Functions
-
-bool AGCharacterBase::IsAnyMontagePlaying() const
-{
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (!AnimInstance)
-	{
-		return true;
-	}
-
-	return AnimInstance->IsAnyMontagePlaying();
-}
-
-void AGCharacterBase::PlayAnimMontage(UAnimMontage* MontageToPlay)
-{
-	if (!MontageToPlay) return;
-
-	if (IsAnyMontagePlaying() == true) return;
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (!AnimInstance) return;
-
-	AnimInstance->Montage_Play(MontageToPlay);
+	GetAbilitySystemComponent()->PressInputID((int)EAbilityInputID::SpecialAttack);
 }
 
 #pragma endregion

@@ -4,8 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
+#include "GameplayAbilities/GAbilitySystemTypes.h"
 #include "GAbilitySystemComponent.generated.h"
 
+struct FGameplayAbilitySpec;
+class UGA_AbilityBase;
 /**
  * 
  */
@@ -18,6 +21,7 @@ public:
 	void ApplyGameplayEffect(TSubclassOf<UGameplayEffect> EffectToApply, int Level = 1);
 
 	void ApplyInitialEffects();
+	void GrantInitialAbilities();
 	void ApplyFullStat();
 
 private:
@@ -27,5 +31,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Init")
 	TSubclassOf<UGameplayEffect> FullStatEffect;
 
-
+	UPROPERTY(EditDefaultsOnly, Category = "Init")
+	TMap<EAbilityInputID, TSubclassOf<class UGA_AbilityBase>> Abilities;
 };

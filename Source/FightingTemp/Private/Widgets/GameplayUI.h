@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Widgets/ValueGauge.h"
+#include "Widgets/ScoreKeeper.h"
 #include "GameplayUI.generated.h"
 
 /**
@@ -21,14 +22,19 @@ public:
 	void SetTimerValue(FText Text);
 	void SetCountdownValue(FText Text);
 
-	UValueGauge* GetPlayerOneHealthBar() { return PlayerOneHealthBar; }
-	UValueGauge* GetPlayerTwoHealthBar() { return PlayerTwoHealthBar; }
+	FORCEINLINE UValueGauge* GetPlayerOneHealthBar() { return PlayerOneHealthBar; }
+	FORCEINLINE UValueGauge* GetPlayerTwoHealthBar() { return PlayerTwoHealthBar; }
+
+	FORCEINLINE UScoreKeeper* GetScoreKeeper() { return ScoreKeeper; }
 
 private:
 	UPROPERTY(VisibleDefaultsOnly, meta = (BindWidget))
 	class UValueGauge* PlayerOneHealthBar;
 	UPROPERTY(VisibleDefaultsOnly, meta = (BindWidget))
 	class UValueGauge* PlayerTwoHealthBar;
+
+	UPROPERTY(VisibleDefaultsOnly, meta = (BindWidget))
+	class UScoreKeeper* ScoreKeeper;
 
 	UPROPERTY(VisibleDefaultsOnly, meta = (BindWidget))
 	class UTextBlock* TimerText;

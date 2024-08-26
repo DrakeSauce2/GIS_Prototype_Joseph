@@ -2,6 +2,8 @@
 
 #include "FightingTempGameMode.h"
 
+#include "GameplayAbilities/GAbilitySystemComponent.h"
+
 #include "Engine/World.h"
 #include "Engine/LocalPlayer.h"
 #include "EnhancedInputSubsystems.h"
@@ -22,6 +24,16 @@
 #include "UObject/ConstructorHelpers.h"
 
 #include "Widgets/GameplayUI.h"
+#include "Widgets/ScoreKeeper.h"
+
+/*
+*	As far as I've researched about local co-op in UE5 it currently does not work
+*	with one gamepad and a keyboard. The keyboard and gamepad will just control Player 0,
+*	to fix this you must use two gamepads.
+*	
+*	If you are testing this on keyboard and cannot control both players then that is
+*	the issue
+*/
 
 AFightingTempGameMode::AFightingTempGameMode()
 {
@@ -37,13 +49,18 @@ void AFightingTempGameMode::BeginPlay()
 	FightingCamera = GetWorld()->SpawnActor<AGFightingCamera>(AGFightingCamera::StaticClass(), FVector::ZeroVector, SpawnRotation, SpawnParams);
 
 	SpawnGameplayUI();
-	SpawnPlayers();
+	GameplayUI->GetScoreKeeper()->InitScoreMarks();
 
-	PlayerOne->SetHealthBar(GameplayUI->GetPlayerOneHealthBar());
-	PlayerOne->InitAttributes();
+	SpawnPlayerControllers();
 
-	PlayerTwo->SetHealthBar(GameplayUI->GetPlayerTwoHealthBar());
-	PlayerTwo->InitAttributes();
+	GetPlayerOne()->SetHealthBar(GameplayUI->GetPlayerOneHealthBar());
+	GetPlayerOne()->InitAttributes();
+	GetPlayerOne()->InitAbilities();
+
+	GetPlayerTwo()->SetHealthBar(GameplayUI->GetPlayerTwoHealthBar());
+	GetPlayerTwo()->InitAttributes();
+	GetPlayerTwo()->InitAbilities();
+
 
 	/*
 	*	This is to add a delay between the players spawning and the setting the camera view targets
@@ -52,10 +69,16 @@ void AFightingTempGameMode::BeginPlay()
 	FTimerHandle TimerHandle;
 	GetWorldTimerManager().SetTimer(TimerHandle, this, &AFightingTempGameMode::SetCameraViewTargets, 0.1f, false);
 
-	SetPlayerControllerEnabled(PlayerOne, false);
-	SetPlayerControllerEnabled(PlayerTwo, false);
+	SetAllPlayersControllerEnabled(false);
 
 	CountdownTimeRemaining = CountdownStartTime;
+
+	if (GameplayUI)
+	{
+		FText Text = FText::Format(FText::FromString("Round: {0}"), FText::AsNumber(CurrentRound));
+		GameplayUI->SetCountdownValue(Text);
+	}
+
 	GetWorldTimerManager().SetTimer(CountdownTimerHandle, this, &AFightingTempGameMode::UpdateCountdownTimer, 1.0f, true);
 }
 
@@ -64,20 +87,6 @@ void AFightingTempGameMode::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	UpdatePlayerFlip();
-}
-
-void AFightingTempGameMode::UpdatePlayerFlip()
-{
-	if (!PlayerOne || !PlayerTwo) return;
-
-	float PlayerOneXPosition = PlayerOne->GetActorLocation().X;
-	float PlayerTwoXPosition = PlayerTwo->GetActorLocation().X;
-
-	float MidpointX = (PlayerOneXPosition + PlayerTwoXPosition) / 2.0f;
-
-	// If true is facing right, else is facing left
-	PlayerOne->FlipCharacter(PlayerOneXPosition < MidpointX);
-	PlayerTwo->FlipCharacter(PlayerTwoXPosition < MidpointX);
 }
 
 #pragma region Helper Functions
@@ -104,9 +113,162 @@ void AFightingTempGameMode::SetPlayerControllerEnabled(AGCharacterBase* Player, 
 	Player->SetInputEnabled(state);
 }
 
+void AFightingTempGameMode::SetAllPlayersControllerEnabled(bool state)
+{
+	for (const FPlayerData& PlayerData : PlayerDataArray)
+	{
+		SetPlayerControllerEnabled(PlayerData.PlayerCharacter, state);
+	}
+}
+
+AGCharacterBase* AFightingTempGameMode::GetPlayerOne()
+{
+	return PlayerDataArray[0].PlayerCharacter;
+}
+
+AGCharacterBase* AFightingTempGameMode::GetPlayerTwo()
+{
+	return PlayerDataArray[1].PlayerCharacter;
+}
+
 #pragma endregion
 
 #pragma region Gameplay Functions
+
+void AFightingTempGameMode::StartRound()
+{
+	if (GetWorldTimerManager().IsTimerActive(RoundTimerHandle)) return;
+
+	RoundTimeRemaining = RoundStartTime;
+
+	if (GameplayUI)
+	{
+		FText Text = FText::Format(FText::FromString("Round: {0}"), FText::AsNumber(CurrentRound));
+		GameplayUI->SetCountdownValue(Text);
+	}
+
+	GetWorldTimerManager().SetTimer(RoundTimerHandle, this, &AFightingTempGameMode::UpdateRoundTimer, 1.0f, true);
+
+	// Do some other logic here like making sure the player is fully healed and start fight countdown
+}
+
+void AFightingTempGameMode::EndRound()
+{
+	if (GetWorldTimerManager().IsTimerActive(RoundTimerHandle)) 
+	{
+		GetWorldTimerManager().ClearTimer(RoundTimerHandle); 
+	}
+
+	SetAllPlayersControllerEnabled(false);
+
+	HasPlayerWon();
+
+	// Maybe wait for a bit for animations or fade-in/fade-out then reset for next round or match end
+}
+
+/*
+*	Determines Round Outcome When Timer Runs Out
+*/
+void AFightingTempGameMode::DetermineRoundOutcome()
+{
+	if (FMath::IsNearlyEqual(PlayerDataArray[0].PlayerCharacter->GetHealth(), PlayerDataArray[1].PlayerCharacter->GetHealth(), 0.01f))
+	{
+		if (GameplayUI) 
+		{
+			FText Text = FText::FromString("Draw");
+			GameplayUI->SetCountdownValue(Text);
+		}
+		
+		return;
+	}
+
+	if (PlayerDataArray[0].PlayerCharacter->GetHealth() > PlayerDataArray[1].PlayerCharacter->GetHealth())
+	{
+		PlayerDataArray[0].Score++;
+
+		if (GameplayUI)
+			GameplayUI->GetScoreKeeper()->SetPlayerOneScoreMarkActive(PlayerDataArray[0].Score - 1);
+	}
+	else
+	{
+		PlayerDataArray[1].Score++;
+
+		if (GameplayUI)
+			GameplayUI->GetScoreKeeper()->SetPlayerTwoScoreMarkActive(PlayerDataArray[1].Score - 1);
+	}
+}
+
+void AFightingTempGameMode::HasPlayerWon()
+{	
+	for (int i = 0; i < PlayerDataArray.Num(); i++)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Player %d Score: %d"), i, PlayerDataArray[i].Score)
+
+		if (PlayerDataArray[i].Score == ScoreToWin)
+		{
+			if (GameplayUI)
+			{
+				// Alternatively we could use the character name here
+				FText Text = FText::Format(FText::FromString("Player {0} Wins!"), FText::AsNumber(i));
+				GameplayUI->SetCountdownValue(Text);
+			}
+
+			// TODO: Do win stuff. Go Back To Main Menu
+
+			return; // Found a winner
+		}
+	}
+
+	/* v	Did not find a winner, continue match	v */
+
+	CurrentRound++;
+
+	IntermissionTimeRemaining = IntermissionTime;
+	GetWorldTimerManager().SetTimer(CountdownTimerHandle, this, &AFightingTempGameMode::RoundIntermission, 1.0f, true);
+}
+
+void AFightingTempGameMode::HandlePlayerDead(int32 PlayerID)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Handling Dead Person: %d"), PlayerID);
+
+	// this is jank but, its so ensure it doesn't double kill
+	if (!GetWorldTimerManager().IsTimerActive(RoundTimerHandle)) return; 
+
+	if (PlayerID == 0)
+	{
+		PlayerDataArray[1].Score++;
+
+		if (GameplayUI)
+			GameplayUI->GetScoreKeeper()->SetPlayerTwoScoreMarkActive(PlayerDataArray[1].Score - 1);
+	}
+	else 
+	{
+		PlayerDataArray[0].Score++;
+
+		if (GameplayUI)
+			GameplayUI->GetScoreKeeper()->SetPlayerOneScoreMarkActive(PlayerDataArray[0].Score - 1);
+	}
+		
+	EndRound();
+}
+
+void AFightingTempGameMode::UpdatePlayerFlip()
+{
+	if (!GetPlayerOne() || !GetPlayerTwo()) return;
+
+	float PlayerOneXPosition = GetPlayerOne()->GetActorLocation().X;
+	float PlayerTwoXPosition = GetPlayerTwo()->GetActorLocation().X;
+
+	float MidpointX = (PlayerOneXPosition + PlayerTwoXPosition) / 2.0f;
+
+	// If true is facing right, else is facing left
+	GetPlayerOne()->FlipCharacter(PlayerOneXPosition < MidpointX);
+	GetPlayerTwo()->FlipCharacter(PlayerTwoXPosition < MidpointX);
+}
+
+#pragma endregion
+
+#pragma region Timer Update Functions
 
 void AFightingTempGameMode::UpdateRoundTimer()
 {
@@ -119,9 +281,12 @@ void AFightingTempGameMode::UpdateRoundTimer()
 
 	if (RoundTimeRemaining <= 0)
 	{
+		DetermineRoundOutcome();
+
 		EndRound();
 	}
 }
+
 
 void AFightingTempGameMode::UpdateCountdownTimer()
 {
@@ -129,25 +294,27 @@ void AFightingTempGameMode::UpdateCountdownTimer()
 
 	CountdownTimeRemaining -= 1.0f;
 
+	/*
 	FText Text = FText::AsNumber(FMath::FloorToInt(CountdownTimeRemaining));
 	GameplayUI->SetCountdownValue(Text);
+	*/
+
+	if (GameplayUI)
+	{
+		FText Text = FText::Format(FText::FromString("Round: {0}"), FText::AsNumber(CurrentRound));
+		GameplayUI->SetCountdownValue(Text);
+	}
 
 	if (CountdownTimeRemaining <= 0.0f)
 	{
 		StartRound();
 
-		// Enable Player Movement
-
-		if(PlayerOne)
-			SetPlayerControllerEnabled(PlayerOne, true);
-
-		if(PlayerTwo)
-			SetPlayerControllerEnabled(PlayerTwo, true);
+		SetAllPlayersControllerEnabled(true);
 
 		GameplayUI->SetCountdownValue(FText::FromString("FIGHT!"));
 	}
 
-	if (CountdownTimeRemaining <= -0.5f) 
+	if (CountdownTimeRemaining <= -0.5f)
 	{
 		GameplayUI->SetCountdownValue(FText::FromString(""));
 
@@ -155,60 +322,67 @@ void AFightingTempGameMode::UpdateCountdownTimer()
 	}
 }
 
-void AFightingTempGameMode::StartRound()
+void AFightingTempGameMode::RoundIntermission()
 {
-	if (GetWorldTimerManager().IsTimerActive(RoundTimerHandle)) return;
+	IntermissionTimeRemaining -= 1.0f;
 
-	RoundTimeRemaining = RoundStartTime;
-
-	if (GameplayUI) 
+	if (IntermissionTimeRemaining <= 0) // Start Next Round
 	{
-		FText Text = FText::AsNumber(FMath::FloorToInt(RoundTimeRemaining));
-		GameplayUI->SetTimerValue(Text);
+		GetWorldTimerManager().ClearTimer(RoundIntermissionTimerHandle);
+
+		for (const FPlayerData& PlayerData : PlayerDataArray)
+		{
+			PlayerData.PlayerCharacter->ApplyFullStat();
+
+			PlayerData.PlayerCharacter->SetActorLocation(PlayerData.StartingPosition);
+		}
+
+		// Player Back To Start Positions
+
+		CountdownTimeRemaining = CountdownStartTime;
+		GetWorldTimerManager().SetTimer(CountdownTimerHandle, this, &AFightingTempGameMode::UpdateCountdownTimer, 1.0f, true);
 	}
-
-	GetWorldTimerManager().SetTimer(RoundTimerHandle, this, &AFightingTempGameMode::UpdateRoundTimer, 1.0f, true);
-
-	// Do some other logic here like making sure the player is fully healed and start fight countdown
-}
-
-void AFightingTempGameMode::EndRound()
-{
-	if (GetWorldTimerManager().IsTimerActive(RoundTimerHandle)) 
-	{
-		GetWorldTimerManager().ClearTimer(RoundTimerHandle);
-	}
-
-	// Maybe wait for a bit for animations or fade-in/fade-out then reset for next round or match end
 }
 
 #pragma endregion
 
 #pragma region Player Spawning Functions
 
-void AFightingTempGameMode::SpawnPlayers()
+void AFightingTempGameMode::SpawnPlayerControllers()
 {
 	UMyBaseGameInstance* GameInstance = Cast<UMyBaseGameInstance>(GetGameInstance());
-
 	if (!GameInstance || !GameInstance->SelectedCharacterClass) return;
 
-	// We don't need to create a local player for player 1 as its created for us automatically
-	APlayerController* PlayerOneController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+	
+	FPlayerData PlayerOneData;
+	PlayerOneData.Score = 0;
+	APlayerController* PlayerOneController = UGameplayStatics::GetPlayerController(GetWorld(), 0); // We don't need to create a local player for player 1 as its created for us automatically
 	if (PlayerOneController)
 	{
 		FVector SpawnLocation = FVector(810.0f, 10.0f, 212.0f); // Adjust as needed
+		PlayerOneData.StartingPosition = SpawnLocation;
 
 		// TODO: Implement character selection choice properly
-		PlayerOne = SpawnAndPossessCharacter(PlayerOneController, GameInstance->SelectedCharacterClass, SpawnLocation);
+		PlayerOneData.PlayerCharacter = SpawnAndPossessCharacter(PlayerOneController, GameInstance->SelectedCharacterClass, SpawnLocation);
+		PlayerDataArray.Add(PlayerOneData);
+
+		PlayerOneData.PlayerCharacter->OnPlayerDeath.AddDynamic(this, &AFightingTempGameMode::HandlePlayerDead);
 	}
 
+	FPlayerData PlayerTwoData;
+	PlayerTwoData.Score = 0;
 	APlayerController* PlayerTwoController = UGameplayStatics::CreatePlayer(GetWorld(), 1, true);
-	if (PlayerTwoController) // Assign Selected Character To This Local Player Instance
+	if (PlayerTwoController)
 	{
 		FVector SpawnLocation = FVector(1290.0f, 10.0f, 212.0f); // Adjust as needed
+		PlayerTwoData.StartingPosition = SpawnLocation;
 
 		// TODO: Implement character selection choice properly
-		PlayerTwo = SpawnAndPossessCharacter(PlayerTwoController, GameInstance->SelectedCharacterClass, SpawnLocation);
+		PlayerTwoData.PlayerCharacter = SpawnAndPossessCharacter(PlayerTwoController, GameInstance->SelectedCharacterClass, SpawnLocation);
+		PlayerDataArray.Add(PlayerTwoData);
+
+		PlayerTwoData.PlayerCharacter->OnPlayerDeath.AddDynamic(this, &AFightingTempGameMode::HandlePlayerDead);
 	}
 }
 
@@ -219,23 +393,26 @@ AGCharacterBase* AFightingTempGameMode::SpawnAndPossessCharacter(APlayerControll
 
 	if (!PlayerController) return nullptr;
 
-	FRotator SpawnRotation = FRotator::ZeroRotator;
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = PlayerController;
-
 	ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>(PlayerController->Player);
 	if (!LocalPlayer) return nullptr;
 
 	UEnhancedInputLocalPlayerSubsystem* InputSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
 	if (!InputSubsystem) return nullptr;
 
+	// Add Input Mapping before possess character. Results vary if applied after possession.
 	InputSubsystem->AddMappingContext(GameInstance->InputMapping, 0);
 
 	PlayerController->SetInputMode(FInputModeGameOnly());
 
+	FRotator SpawnRotation = FRotator::ZeroRotator;
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = PlayerController;
+	
+	// Create Selected Character
 	AGCharacterBase* InstancedCharacter = GetWorld()->SpawnActor<AGCharacterBase>(SelectedCharacterToSpawn, SpawnLocation, SpawnRotation, SpawnParams);
 	if (!InstancedCharacter) return nullptr;
 
+	// Owning Controller Possesses Selected Character
 	PlayerController->Possess(InstancedCharacter);
 	UE_LOG(LogTemp, Warning, TEXT("Player spawned and possessed successfully!"));
 
@@ -244,6 +421,8 @@ AGCharacterBase* AFightingTempGameMode::SpawnAndPossessCharacter(APlayerControll
 
 #pragma endregion
  
+#pragma region UI Functions
+
 void AFightingTempGameMode::SpawnGameplayUI()
 {
 	if (!GameplayUIClass) return;
@@ -254,4 +433,7 @@ void AFightingTempGameMode::SpawnGameplayUI()
 		GameplayUI->AddToViewport();
 	}
 }
+
+#pragma endregion
+
 
