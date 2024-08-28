@@ -99,11 +99,13 @@ void AFightingTempGameMode::SetCameraViewTargets()
 		PlayerOneController->SetViewTarget(FightingCamera);
 	}
 
+	/*
 	APlayerController* PlayerTwoController = UGameplayStatics::GetPlayerController(GetWorld(), 1);
 	if (PlayerTwoController && FightingCamera)
 	{
 		PlayerTwoController->SetViewTarget(FightingCamera);
 	}
+	*/
 }
 
 void AFightingTempGameMode::SetPlayerControllerEnabled(AGCharacterBase* Player, bool state)

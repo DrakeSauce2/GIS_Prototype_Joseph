@@ -80,6 +80,7 @@ void AGCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	if (enhancedInputComp)
 	{
 		enhancedInputComp->BindAction(MoveInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::HandleDirectionalInput);
+		enhancedInputComp->BindAction(JumpInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::Jump);
 
 		enhancedInputComp->BindAction(LightAttackInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::LightAttack);
 		enhancedInputComp->BindAction(MediumAttackInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::MediumAttack);
@@ -87,7 +88,6 @@ void AGCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		enhancedInputComp->BindAction(SpecialAttackInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::SpecialAttack);
 
 		enhancedInputComp->BindAction(BlockInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::Block);
-		enhancedInputComp->BindAction(GrabInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::Grab);
 	}
 }
 
@@ -96,7 +96,7 @@ void AGCharacterBase::HandleDirectionalInput(const FInputActionValue& InputValue
 	FVector2D input = InputValue.Get<FVector2D>();
 	input.Normalize();
 
-	if (input.Y > 0)
+	if (input.Y > 0 && input.X < 0.7f && input.X > -0.3f)
 	{
 		Jump();
 	}
@@ -270,11 +270,6 @@ int32 AGCharacterBase::GetPlayerLocalID() const
 #pragma region Action Functions
 
 void AGCharacterBase::Block()
-{
-
-}
-
-void AGCharacterBase::Grab()
 {
 
 }

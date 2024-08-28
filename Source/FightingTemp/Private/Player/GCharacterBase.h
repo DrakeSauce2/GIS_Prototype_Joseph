@@ -48,8 +48,6 @@ protected:
 	/*****************************************************/
 	UFUNCTION()
 	void Block();
-	UFUNCTION()
-	void Grab();
 	
 	UFUNCTION()
 	void LightAttack();
@@ -119,7 +117,8 @@ public:
 	/*****************************************************/
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* MoveInputAction;
-
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* JumpInputAction;
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* LightAttackInputAction;
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -131,8 +130,7 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* BlockInputAction;
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	UInputAction* GrabInputAction;
+
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "GameplayCue")
