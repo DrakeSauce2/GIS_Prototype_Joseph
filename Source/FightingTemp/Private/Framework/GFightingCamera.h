@@ -22,7 +22,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
-	class AFightingTempGameMode* GameMode;
+	class AGFightingGameMode* GameMode;
 
 	float CalculateDistance();
 	FVector CalculatePosition();

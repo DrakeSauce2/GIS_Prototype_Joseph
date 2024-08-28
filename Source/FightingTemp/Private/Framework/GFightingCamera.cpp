@@ -5,7 +5,7 @@
 
 #include "Engine/World.h"
 
-#include "FightingTemp/FightingTempGameMode.h"
+#include "Framework/GFightingGameMode.h"
 
 #include "Player/GCharacterBase.h"
 
@@ -18,7 +18,7 @@ void AGFightingCamera::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GameMode = Cast<AFightingTempGameMode>(GetWorld()->GetAuthGameMode());
+	GameMode = Cast<AGFightingGameMode>(GetWorld()->GetAuthGameMode());
 }
 
 void AGFightingCamera::Tick(float DeltaTime)

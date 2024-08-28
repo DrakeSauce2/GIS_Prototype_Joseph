@@ -38,8 +38,4 @@ private:
 	const ACharacter* OwnerCharacter;
 	const UCharacterMovementComponent* OwnerMovemmentComp;
 
-	class AFightingTempCharacter* FightingTempCharacter;
-
-	
-
 };

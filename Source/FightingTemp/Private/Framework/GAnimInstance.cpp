@@ -5,7 +5,6 @@
 
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "FightingTemp/Private/Player/FightingTempCharacter.h"
 
 void UGAnimInstance::NativeInitializeAnimation()
 {
@@ -15,8 +14,6 @@ void UGAnimInstance::NativeInitializeAnimation()
 	{
 		OwnerMovemmentComp = OwnerCharacter->GetCharacterMovement();
 	}
-
-	FightingTempCharacter = Cast<AFightingTempCharacter>(TryGetPawnOwner());
 }
 
 void UGAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
@@ -25,7 +22,6 @@ void UGAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 
 	if (OwnerCharacter && OwnerMovemmentComp)
 	{
-		//bIsFlipped = FightingTempCharacter->IsFlipped();
 		Speed = OwnerCharacter->GetVelocity().Length();
 		bIsJumping = OwnerMovemmentComp->IsFalling();
 	}
