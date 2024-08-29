@@ -34,8 +34,7 @@ float AGFightingCamera::CalculateDistance()
 {
 	float Distance = FVector::Dist(GetPlayerOnePosition(), GetPlayerTwoPosition());
 
-	// You might want to adjust the multiplier and offset based on your game
-	float CameraDistance = Distance * 0.5f + 250.0f; // Example values
+	float CameraDistance = Distance * 0.5f + 250.0f; 
 	return CameraDistance;
 }
 

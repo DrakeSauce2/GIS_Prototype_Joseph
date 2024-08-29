@@ -96,15 +96,16 @@ void AGCharacterBase::HandleDirectionalInput(const FInputActionValue& InputValue
 	FVector2D input = InputValue.Get<FVector2D>();
 	input.Normalize();
 
-	if (input.Y > 0 && input.X < 0.5f && input.X > -0.5f)
-	{
-		Jump();
-	}
 	// TODO: implement crouching
 
 	FVector Direction = FVector(input.X, 0, 0);
 
 	AddMovementInput(Direction);
+
+	if (input.Y > 0 && input.X < 0.5f && input.X > -0.5f)
+	{
+		Jump();
+	}
 }
 
 void AGCharacterBase::HealthUpdated(const FOnAttributeChangeData& ChangeData)

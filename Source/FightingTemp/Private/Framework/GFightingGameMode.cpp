@@ -360,7 +360,7 @@ void AGFightingGameMode::SpawnPlayerControllers()
 	APlayerController* PlayerOneController = UGameplayStatics::GetPlayerController(GetWorld(), 0); // We don't need to create a local player for player 1 as its created for us automatically
 	if (PlayerOneController)
 	{
-		FVector SpawnLocation = FVector(810.0f, 10.0f, 212.0f); // Adjust as needed
+		FVector SpawnLocation = FVector(810.0f, 10.0f, 200.0f); // Adjust as needed
 		PlayerOneData.StartingPosition = SpawnLocation;
 
 		// TODO: Implement character selection choice properly
@@ -375,7 +375,7 @@ void AGFightingGameMode::SpawnPlayerControllers()
 	APlayerController* PlayerTwoController = UGameplayStatics::CreatePlayer(GetWorld(), 1, true);
 	if (PlayerTwoController)
 	{
-		FVector SpawnLocation = FVector(1290.0f, 10.0f, 212.0f); // Adjust as needed
+		FVector SpawnLocation = FVector(1290.0f, 10.0f, 200.0f); // Adjust as needed
 		PlayerTwoData.StartingPosition = SpawnLocation;
 
 		// TODO: Implement character selection choice properly
