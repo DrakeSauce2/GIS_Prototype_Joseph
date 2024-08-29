@@ -24,7 +24,7 @@ void UHitboxComponent::DoTargetCheck()
 	if (GetWorld()->OverlapMultiByChannel(OutResult,
 		GetComponentLocation(),
 		GetComponentQuat(),
-		ECC_Pawn,
+		ECC_GameTraceChannel1,
 		DetecteionShape,
 		QueryParams))
 	{

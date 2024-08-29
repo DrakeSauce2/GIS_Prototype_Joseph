@@ -96,7 +96,7 @@ void AGCharacterBase::HandleDirectionalInput(const FInputActionValue& InputValue
 	FVector2D input = InputValue.Get<FVector2D>();
 	input.Normalize();
 
-	if (input.Y > 0 && input.X < 0.7f && input.X > -0.3f)
+	if (input.Y > 0 && input.X < 0.5f && input.X > -0.5f)
 	{
 		Jump();
 	}
