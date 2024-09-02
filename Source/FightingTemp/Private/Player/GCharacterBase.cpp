@@ -22,6 +22,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 
 #include "Hitbox/HitboxComponent.h"
+#include "Hitbox/PushboxComponent.h"
 
 #include "Widgets/ValueGauge.h"
 
@@ -34,6 +35,9 @@ AGCharacterBase::AGCharacterBase()
 
 	HitboxComponent = CreateDefaultSubobject<UHitboxComponent>("Hitbox Component");
 	HitboxComponent->SetupAttachment(GetMesh());
+
+	PushboxComponent = CreateDefaultSubobject<UPushboxComponent>("Pushbox Component");
+	PushboxComponent->SetupAttachment(GetMesh());
 
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UGAttributeSet::GetHealthAttribute()).AddUObject(this, &AGCharacterBase::HealthUpdated);
 	AbilitySystemComponent->RegisterGameplayTagEvent(UGAbilityGenericTags::GetDeadTag()).AddUObject(this, &AGCharacterBase::DeathTagChanged);

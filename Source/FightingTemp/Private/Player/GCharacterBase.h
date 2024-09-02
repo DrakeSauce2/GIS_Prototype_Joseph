@@ -74,6 +74,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Hitbox")
 	class UHitboxComponent* HitboxComponent;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Hitbox")
+	class UPushboxComponent* PushboxComponent;
+
 	UFUNCTION()
 	void HandleDirectionalInput(const FInputActionValue& InputValue);
 
