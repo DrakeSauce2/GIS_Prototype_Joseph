@@ -24,6 +24,8 @@ public:
 	void GrantInitialAbilities();
 	void ApplyFullStat();
 
+	void TryActivateDirectionalAttack(FVector Direction, int InputID);
+
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Init")
 	TArray<TSubclassOf<UGameplayEffect>> InitialEffects;
