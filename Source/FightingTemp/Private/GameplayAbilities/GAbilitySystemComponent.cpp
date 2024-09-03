@@ -21,17 +21,49 @@ void UGAbilitySystemComponent::ApplyInitialEffects()
 // Maybe Rename to GrantInitialAttackAbilities
 void UGAbilitySystemComponent::GrantInitialAbilities()
 {
-	for (const TPair<EAbilityInputID, TSubclassOf<UGA_AbilityBase>>& AbilityPair : Abilities)
+	for (int i = 0; i < LightAttackAbilities.Num(); i++) 
 	{
-		// This Returns a Spec Handle. Look into this
-		GiveAbility(FGameplayAbilitySpec{ AbilityPair.Value, 1, (int)AbilityPair.Key, GetOwner() });
+		FGameplayAbilitySpecHandle SpecHandle =
+			GiveAbility(FGameplayAbilitySpec{ LightAttackAbilities[i], 1, (int)EAbilityInputID::LightAttack, GetOwner()});
+
+		if (i > AttackDirections.Num()) 
+		{
+			AssignAbilityAttackDirections(i, EAbilityInputID::LightAttack, SpecHandle);
+		}
 	}
 
-	// Foreach, (MediumAttackPair : MediumAttackAbilities)
-	// Foreach, (HeavyAttackPair : HeavyAttackAbilities)
-	// Foreach, (SpecialAttackPair : SpecialAttackAbilities)
-	// 
-	// Do this to Add Abilities to a directional based TMap where FVector is key and Ability is value
+	for (int i = 0; i < MediumAttackAbilities.Num(); i++)
+	{
+		FGameplayAbilitySpecHandle SpecHandle =
+			GiveAbility(FGameplayAbilitySpec{ MediumAttackAbilities[i], 1, (int)EAbilityInputID::MediumAttack, GetOwner() });
+
+		if (i > AttackDirections.Num())
+		{
+			AssignAbilityAttackDirections(i, EAbilityInputID::MediumAttack, SpecHandle);
+		}
+	}
+
+	for (int i = 0; i < MediumAttackAbilities.Num(); i++)
+	{
+		FGameplayAbilitySpecHandle SpecHandle =
+			GiveAbility(FGameplayAbilitySpec{ HeavyAttackAbilities[i], 1, (int)EAbilityInputID::HeavyAttack, GetOwner() });
+
+		if (i > AttackDirections.Num())
+		{
+			AssignAbilityAttackDirections(i, EAbilityInputID::HeavyAttack, SpecHandle);
+		}
+	}
+
+	for (int i = 0; i < MediumAttackAbilities.Num(); i++)
+	{
+		FGameplayAbilitySpecHandle SpecHandle =
+			GiveAbility(FGameplayAbilitySpec{ SpecialAttackAbilities[i], 1, (int)EAbilityInputID::SpecialAttack, GetOwner() });
+
+		if (i > AttackDirections.Num())
+		{
+			AssignAbilityAttackDirections(i, EAbilityInputID::SpecialAttack, SpecHandle);
+		}
+	}
 }
 
 void UGAbilitySystemComponent::ApplyFullStat()
@@ -42,8 +74,34 @@ void UGAbilitySystemComponent::ApplyFullStat()
 	}
 }
 
-void UGAbilitySystemComponent::TryActivateDirectionalAttack(FVector Direction, int InputID)
+void UGAbilitySystemComponent::TryActivateDirectionalAttack(const FVector& Direction, const EAbilityInputID& InputType, bool IsGrounded)
 {
-	// FVector Pair with ability spec
-	// ActivatableAbilities.Items
+	if (!IsGrounded)
+	{
+		// Do Air Attack
+		UE_LOG(LogTemp, Warning, TEXT("I'm Not Grounded"));
+
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("I'm Working"));
+
+	FDirectionAttackKey Key;
+	Key.Direction = Direction; // Maybe do some rounding to make sure this is accurate :)
+	Key.InputType = InputType;
+
+	FGameplayAbilitySpecHandle* SpecHandle = DirectionToAbilityHandleMap.Find(Key);
+	if (SpecHandle) {
+		TryActivateAbility(*SpecHandle, false);
+	}
+
+}
+
+void UGAbilitySystemComponent::AssignAbilityAttackDirections(const int& Index, EAbilityInputID InputID, FGameplayAbilitySpecHandle SpecHandle)
+{
+	FDirectionAttackKey Key;
+	Key.Direction = AttackDirections[Index];
+	Key.InputType = InputID;
+
+	DirectionToAbilityHandleMap.Add(Key, SpecHandle);
 }

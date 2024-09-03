@@ -47,16 +47,7 @@ protected:
 	/*                 Action Functions                  */
 	/*****************************************************/
 	UFUNCTION()
-	void Block();
-	
-	UFUNCTION()
-	void LightAttack();
-	UFUNCTION()
-	void MediumAttack();
-	UFUNCTION()
-	void HeavyAttack();
-	UFUNCTION()
-	void SpecialAttack();
+	void HandleAbilityInput(EAbilityInputID InputId);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
@@ -130,15 +121,10 @@ public:
 	UInputAction* MoveInputAction;
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* JumpInputAction;
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	UInputAction* LightAttackInputAction;
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	UInputAction* MediumAttackInputAction;
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	UInputAction* HeavyAttackInputAction;
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	UInputAction* SpecialAttackInputAction;
-	
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TMap<EAbilityInputID, UInputAction*> AttackInputMap;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* BlockInputAction;
 

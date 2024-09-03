@@ -87,12 +87,12 @@ void AGCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		enhancedInputComp->BindAction(MoveInputAction, ETriggerEvent::Completed, this, &AGCharacterBase::DirectionalInputEnd);
 		enhancedInputComp->BindAction(JumpInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::Jump);
 
-		enhancedInputComp->BindAction(LightAttackInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::LightAttack);
-		enhancedInputComp->BindAction(MediumAttackInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::MediumAttack);
-		enhancedInputComp->BindAction(HeavyAttackInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::HeavyAttack);
-		enhancedInputComp->BindAction(SpecialAttackInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::SpecialAttack);
+		for (const TPair<EAbilityInputID, UInputAction*>& InputPair : AttackInputMap)
+		{
+			enhancedInputComp->BindAction(InputPair.Value, ETriggerEvent::Triggered, this, &AGCharacterBase::HandleAbilityInput, InputPair.Key);
+		}
 
-		enhancedInputComp->BindAction(BlockInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::Block);
+		//enhancedInputComp->BindAction(BlockInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::Block);
 	}
 }
 
@@ -285,29 +285,16 @@ int32 AGCharacterBase::GetPlayerLocalID() const
 
 #pragma region Action Functions
 
-void AGCharacterBase::Block()
+void AGCharacterBase::HandleAbilityInput(EAbilityInputID InputId)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Handling Ability Input"));
 
-}
-
-void AGCharacterBase::LightAttack()
-{
-	GetAbilitySystemComponent()->PressInputID((int)EAbilityInputID::LightAttack);
-}
-
-void AGCharacterBase::MediumAttack()
-{
-	GetAbilitySystemComponent()->PressInputID((int)EAbilityInputID::MediumAttack);
-}
-
-void AGCharacterBase::HeavyAttack()
-{
-	GetAbilitySystemComponent()->PressInputID((int)EAbilityInputID::HeavyAttack);
-}
-
-void AGCharacterBase::SpecialAttack()
-{
-	GetAbilitySystemComponent()->PressInputID((int)EAbilityInputID::SpecialAttack);
+	AbilitySystemComponent->TryActivateDirectionalAttack
+	(
+		FVector(PlayerInput.X, 0, PlayerInput.Y), 
+		InputId, 
+		!GetCharacterMovement()->IsFalling()
+	);
 }
 
 #pragma endregion
