@@ -3,6 +3,8 @@
 
 #include "Framework/GAnimInstance.h"
 
+#include "Player/GCharacterBase.h"
+
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -12,6 +14,8 @@ void UGAnimInstance::NativeInitializeAnimation()
 	OwnerCharacter = Cast<ACharacter>(TryGetPawnOwner());
 	if (OwnerCharacter)
 	{
+		OwnerCharacterBase = Cast<AGCharacterBase>(OwnerCharacter);
+
 		OwnerMovemmentComp = OwnerCharacter->GetCharacterMovement();
 	}
 }
@@ -20,9 +24,10 @@ void UGAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
 
-	if (OwnerCharacter && OwnerMovemmentComp)
+	if (OwnerCharacter && OwnerCharacterBase && OwnerMovemmentComp)
 	{
-		Speed = OwnerCharacter->GetVelocity().Length();
+		Speed = OwnerCharacterBase->GetPlayerInput().X;
+
 		bIsJumping = OwnerMovemmentComp->IsFalling();
 	}
 }

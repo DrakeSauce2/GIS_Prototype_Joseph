@@ -84,6 +84,7 @@ void AGCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	if (enhancedInputComp)
 	{
 		enhancedInputComp->BindAction(MoveInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::HandleDirectionalInput);
+		enhancedInputComp->BindAction(MoveInputAction, ETriggerEvent::Completed, this, &AGCharacterBase::DirectionalInputEnd);
 		enhancedInputComp->BindAction(JumpInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::Jump);
 
 		enhancedInputComp->BindAction(LightAttackInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::LightAttack);
@@ -97,19 +98,24 @@ void AGCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 
 void AGCharacterBase::HandleDirectionalInput(const FInputActionValue& InputValue)
 {
-	FVector2D input = InputValue.Get<FVector2D>();
-	input.Normalize();
+	PlayerInput = InputValue.Get<FVector2D>();
+	PlayerInput.Normalize();
 
 	// TODO: implement crouching
 
-	FVector Direction = FVector(input.X, 0, 0);
+	FVector Direction = FVector(PlayerInput.X, 0, 0);
 
 	AddMovementInput(Direction);
 
-	if (input.Y > 0 && input.X < 0.5f && input.X > -0.5f)
+	if (PlayerInput.Y > 0 && PlayerInput.X < 0.5f && PlayerInput.X > -0.5f)
 	{
 		Jump();
 	}
+}
+
+void AGCharacterBase::DirectionalInputEnd(const FInputActionValue& InputValue)
+{
+	PlayerInput = FVector2D::ZeroVector;
 }
 
 void AGCharacterBase::HealthUpdated(const FOnAttributeChangeData& ChangeData)
@@ -216,6 +222,11 @@ void AGCharacterBase::SetInputEnabled(bool state)
 	{
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 	}
+}
+
+FVector2D AGCharacterBase::GetPlayerInput() const
+{
+	return PlayerInput;
 }
 
 void AGCharacterBase::PlayMontage(UAnimMontage* MontageToPlay)

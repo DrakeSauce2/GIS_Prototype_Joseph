@@ -13,7 +13,7 @@ UPushboxComponent::UPushboxComponent()
 	PushForceStrength = 1000.0f;
 
 	// Bind the overlap event
-	OnComponentBeginOverlap.AddDynamic(this, &UPushboxComponent::OnPushboxOverlap);
+	OnComponentBeginOverlap.AddDynamic(this, &UPushboxComponent::OnPushboxBeginOverlap);
 }
 
 void UPushboxComponent::BeginPlay()
@@ -23,7 +23,7 @@ void UPushboxComponent::BeginPlay()
 
 }
 
-void UPushboxComponent::OnPushboxOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void UPushboxComponent::OnPushboxBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	ACharacter* OtherCharacter = Cast<ACharacter>(OtherActor);
 	if (OtherCharacter)

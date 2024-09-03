@@ -80,7 +80,12 @@ private:
 	UFUNCTION()
 	void HandleDirectionalInput(const FInputActionValue& InputValue);
 
+	UFUNCTION()
+	void DirectionalInputEnd(const FInputActionValue& InputValue);
+
+
 	FVector StartingPosition;
+	FVector2D PlayerInput; // Testing Purposes
 
 	UPROPERTY()
 	UValueGauge* HealthBar;
@@ -98,6 +103,9 @@ public:
 	void FlipCharacter(bool bIsFacingRight);
 
 	void SetInputEnabled(bool state);
+
+	UFUNCTION()
+	FVector2D GetPlayerInput() const;
 
 public:
 	// Called every frame

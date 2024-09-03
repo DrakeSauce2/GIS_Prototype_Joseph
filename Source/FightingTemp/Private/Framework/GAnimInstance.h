@@ -7,6 +7,7 @@
 #include "GAnimInstance.generated.h"
 
 class ACharacter;
+class AGCharacterBase;
 class UCharacterMovementComponent;
 class AFightingTempCharacter;
 /**
@@ -36,6 +37,7 @@ private:
 	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 
 	const ACharacter* OwnerCharacter;
+	const AGCharacterBase* OwnerCharacterBase; // For Testing
 	const UCharacterMovementComponent* OwnerMovemmentComp;
 
 };
