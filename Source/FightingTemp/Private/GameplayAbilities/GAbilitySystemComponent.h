@@ -20,7 +20,7 @@ struct FDirectionAttackKey
 
 	bool operator==(const FDirectionAttackKey& Other) const 
 	{
-		return Direction.Equals(Other.Direction, 0.1) && InputType == Other.InputType;
+		return Direction.Equals(Other.Direction, 0.5f) && InputType == Other.InputType;
 	}
 
 	// Hash Function for TMap
@@ -72,6 +72,8 @@ private:
 		FVector(1, 0, 0),		// Neutral/Side Attack
 		FVector(0, 0, -1)		// Down Attack
 	};
+
+	FVector RoundDirection(FVector inVector);
 
 	void AssignAbilityAttackDirections(const int& Index, EAbilityInputID InputID, FGameplayAbilitySpecHandle SpecHandle);
 

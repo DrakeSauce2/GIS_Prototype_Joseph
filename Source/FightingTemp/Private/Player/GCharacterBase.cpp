@@ -89,7 +89,7 @@ void AGCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 
 		for (const TPair<EAbilityInputID, UInputAction*>& InputPair : AttackInputMap)
 		{
-			enhancedInputComp->BindAction(InputPair.Value, ETriggerEvent::Triggered, this, &AGCharacterBase::HandleAbilityInput, InputPair.Key);
+			enhancedInputComp->BindAction(InputPair.Value, ETriggerEvent::Started, this, &AGCharacterBase::HandleAbilityInput, InputPair.Key);
 		}
 
 		//enhancedInputComp->BindAction(BlockInputAction, ETriggerEvent::Triggered, this, &AGCharacterBase::Block);
@@ -107,7 +107,7 @@ void AGCharacterBase::HandleDirectionalInput(const FInputActionValue& InputValue
 
 	AddMovementInput(Direction);
 
-	if (PlayerInput.Y > 0 && PlayerInput.X < 0.5f && PlayerInput.X > -0.5f)
+	if (PlayerInput.Y > 0 && PlayerInput.X < 0.6f && PlayerInput.X > -0.6f)
 	{
 		Jump();
 	}

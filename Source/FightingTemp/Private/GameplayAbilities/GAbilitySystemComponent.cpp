@@ -79,26 +79,51 @@ void UGAbilitySystemComponent::TryActivateDirectionalAttack(const FVector& Direc
 	if (!IsGrounded)
 	{
 		// Do Air Attack
-		UE_LOG(LogTemp, Warning, TEXT("I'm Not Grounded"));
 
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("I'm Working"));
-
 	FDirectionAttackKey Key;
-	Key.Direction = Direction; // Maybe do some rounding to make sure this is accurate :)
-	//Key.Direction = FVector(1, 0, 0); // For testing
+	Key.Direction = RoundDirection(Direction);
 	Key.InputType = InputType;
 
-	UE_LOG(LogTemp, Warning, TEXT("FVector: %s, Enum Value: %d"), *Direction.ToString(), static_cast<int32>(InputType));
+	//UE_LOG(LogTemp, Warning, TEXT("FVector: %s, Enum Value: %d"), *RoundDirection(Direction).ToString(), static_cast<int32>(InputType));
 
 	FGameplayAbilitySpecHandle* SpecHandle = DirectionToAbilityHandleMap.Find(Key);
 	if (SpecHandle) {
-		UE_LOG(LogTemp, Warning, TEXT("I have ability spec"));
-
 		TryActivateAbility(*SpecHandle, false);
 	}
+}
+
+FVector UGAbilitySystemComponent::RoundDirection(FVector inVector)
+{
+	// Abs value because there are no back attacks. we don't need to worry about x direction
+	float xDir = FMath::Abs(inVector.X); 
+	float zDir = inVector.Z;
+
+	UE_LOG(LogTemp, Warning, TEXT("X: %f, Y: %f"), xDir, zDir);
+
+	if (xDir < 0.5f && zDir < 0.3f && zDir >= 0)
+	{
+		return FVector(1, 0, 0); // Neutral Attack
+	}
+
+	if (xDir > 0.5f && zDir < 0.3f && zDir >= 0)
+	{
+		return FVector(1, 0, 0); // Neutral Attack
+	}
+
+	if (xDir > 0.0f && zDir > 0.3f)
+	{
+		return FVector(0, 0, 0.5f); // Up Attack
+	}
+
+	if (xDir >= 0 && zDir < 0) 
+	{
+		return FVector(0, 0, -1); // Down Attack
+	}
+
+	return FVector(0, 0, 0);
 }
 
 void UGAbilitySystemComponent::AssignAbilityAttackDirections(const int& Index, EAbilityInputID InputID, FGameplayAbilitySpecHandle SpecHandle)
