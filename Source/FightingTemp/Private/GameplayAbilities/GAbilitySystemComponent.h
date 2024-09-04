@@ -20,7 +20,7 @@ struct FDirectionAttackKey
 
 	bool operator==(const FDirectionAttackKey& Other) const 
 	{
-		return Direction.Equals(Other.Direction) && InputType == Other.InputType;
+		return Direction.Equals(Other.Direction, 0.1) && InputType == Other.InputType;
 	}
 
 	// Hash Function for TMap

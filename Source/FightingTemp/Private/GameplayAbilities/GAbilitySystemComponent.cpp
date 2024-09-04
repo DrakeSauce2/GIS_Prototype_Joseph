@@ -26,7 +26,7 @@ void UGAbilitySystemComponent::GrantInitialAbilities()
 		FGameplayAbilitySpecHandle SpecHandle =
 			GiveAbility(FGameplayAbilitySpec{ LightAttackAbilities[i], 1, (int)EAbilityInputID::LightAttack, GetOwner()});
 
-		if (i > AttackDirections.Num()) 
+		if (i < AttackDirections.Num()) 
 		{
 			AssignAbilityAttackDirections(i, EAbilityInputID::LightAttack, SpecHandle);
 		}
@@ -37,7 +37,7 @@ void UGAbilitySystemComponent::GrantInitialAbilities()
 		FGameplayAbilitySpecHandle SpecHandle =
 			GiveAbility(FGameplayAbilitySpec{ MediumAttackAbilities[i], 1, (int)EAbilityInputID::MediumAttack, GetOwner() });
 
-		if (i > AttackDirections.Num())
+		if (i < AttackDirections.Num())
 		{
 			AssignAbilityAttackDirections(i, EAbilityInputID::MediumAttack, SpecHandle);
 		}
@@ -48,7 +48,7 @@ void UGAbilitySystemComponent::GrantInitialAbilities()
 		FGameplayAbilitySpecHandle SpecHandle =
 			GiveAbility(FGameplayAbilitySpec{ HeavyAttackAbilities[i], 1, (int)EAbilityInputID::HeavyAttack, GetOwner() });
 
-		if (i > AttackDirections.Num())
+		if (i < AttackDirections.Num())
 		{
 			AssignAbilityAttackDirections(i, EAbilityInputID::HeavyAttack, SpecHandle);
 		}
@@ -59,7 +59,7 @@ void UGAbilitySystemComponent::GrantInitialAbilities()
 		FGameplayAbilitySpecHandle SpecHandle =
 			GiveAbility(FGameplayAbilitySpec{ SpecialAttackAbilities[i], 1, (int)EAbilityInputID::SpecialAttack, GetOwner() });
 
-		if (i > AttackDirections.Num())
+		if (i < AttackDirections.Num())
 		{
 			AssignAbilityAttackDirections(i, EAbilityInputID::SpecialAttack, SpecHandle);
 		}
@@ -88,13 +88,17 @@ void UGAbilitySystemComponent::TryActivateDirectionalAttack(const FVector& Direc
 
 	FDirectionAttackKey Key;
 	Key.Direction = Direction; // Maybe do some rounding to make sure this is accurate :)
+	//Key.Direction = FVector(1, 0, 0); // For testing
 	Key.InputType = InputType;
+
+	UE_LOG(LogTemp, Warning, TEXT("FVector: %s, Enum Value: %d"), *Direction.ToString(), static_cast<int32>(InputType));
 
 	FGameplayAbilitySpecHandle* SpecHandle = DirectionToAbilityHandleMap.Find(Key);
 	if (SpecHandle) {
+		UE_LOG(LogTemp, Warning, TEXT("I have ability spec"));
+
 		TryActivateAbility(*SpecHandle, false);
 	}
-
 }
 
 void UGAbilitySystemComponent::AssignAbilityAttackDirections(const int& Index, EAbilityInputID InputID, FGameplayAbilitySpecHandle SpecHandle)
