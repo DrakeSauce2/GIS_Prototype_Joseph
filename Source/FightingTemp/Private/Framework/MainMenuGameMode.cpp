@@ -11,6 +11,8 @@ AMainMenuGameMode::AMainMenuGameMode()
 
 void AMainMenuGameMode::BeginPlay()
 {
+	Super::BeginPlay();
+
 	SpawnMainMenuUI();
 }
 

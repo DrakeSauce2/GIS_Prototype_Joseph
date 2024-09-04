@@ -22,7 +22,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputMappingContext* InputMapping;
 
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Controller")
-	bool isDeviceForMultiplePlayers;
+	void SetMatchRoundTimeLimit(float TimeToSet);
+	void SetScoreToWin(int ScoreToSet);
+
+	float GetMatchRoundTimeLimit();
+	int GetScoreToWin();
+
+private:
+	float MatchRoundTimeLimit = 90;
+	int ScoreToWin = 2;
+
 };
