@@ -108,7 +108,7 @@ FVector UGAbilitySystemComponent::RoundDirection(FVector inVector)
 		return FVector(1, 0, 0); // Neutral Attack
 	}
 
-	if (xDir > 0.5f && zDir < 0.3f && zDir >= 0)
+	if (xDir > 0.5f && zDir < 0.3f && zDir >= -0.3)
 	{
 		return FVector(1, 0, 0); // Neutral Attack
 	}
@@ -118,7 +118,7 @@ FVector UGAbilitySystemComponent::RoundDirection(FVector inVector)
 		return FVector(0, 0, 0.5f); // Up Attack
 	}
 
-	if (xDir >= 0 && zDir < 0) 
+	if (xDir >= 0 && zDir < -0.3) 
 	{
 		return FVector(0, 0, -1); // Down Attack
 	}

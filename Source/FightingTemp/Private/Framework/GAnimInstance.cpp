@@ -26,7 +26,7 @@ void UGAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 
 	if (OwnerCharacter && OwnerCharacterBase && OwnerMovemmentComp)
 	{
-		Speed = OwnerCharacterBase->GetPlayerInput().X;
+		Speed = FMath::Sign(OwnerCharacterBase->GetPlayerInput().X);
 
 		bIsJumping = OwnerMovemmentComp->IsFalling();
 	}

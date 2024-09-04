@@ -7,8 +7,12 @@
 void UAnimNotifyState_StartHitBox::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
+
 	const AActor* OwnerActor = MeshComp->GetOwner();
-	HitboxComponent = OwnerActor->GetComponentByClass<UHitboxComponent>();
+	if (OwnerActor) {
+		HitboxComponent = OwnerActor->GetComponentByClass<UHitboxComponent>();
+	}
+
 	if (HitboxComponent)
 	{
 		HitboxComponent->AttachToComponent(MeshComp, FAttachmentTransformRules::SnapToTargetIncludingScale, AttachSocket);
